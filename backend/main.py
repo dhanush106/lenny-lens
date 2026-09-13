@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
+from backend.db.session import async_session_maker
+from backend.models import User
 
 from backend.core.config import settings
 from backend.core.exceptions import add_exception_handlers
@@ -32,6 +35,18 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(api_router, prefix="/api/v1")
+
+    @app.on_event("startup")
+    async def startup_event():
+        async with async_session_maker() as session:
+            # Check if user 1 exists
+            result = await session.execute(select(User).filter_by(id=1))
+            user = result.scalar_one_or_none()
+            if not user:
+                # Create default user
+                user = User(username="admin", email="admin@example.com")
+                session.add(user)
+                await session.commit()
 
     return app
 
