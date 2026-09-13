@@ -1,31 +1,41 @@
-# LennyLens
+# Lenny Growth Assistant 🚀
 
-LennyLens is an advanced AI-powered application. This repository is currently in the initial setup phase (Phase 3).
+Lenny Growth Assistant is a full-stack, AI-powered conversational application designed to help users extract actionable product growth insights from the *Lenny's Podcast* transcripts.
 
-## Setup Instructions
+## 🌟 Features
+- **Grounded Q&A**: Uses RAG (Retrieval-Augmented Generation) against a PostgreSQL vector database (`pgvector`) to provide grounded, hallucination-free answers.
+- **Ship 30 for 30 Engine**: Generates highly-structured essays based on podcast context.
+- **Dynamic Artifact Rendering**: Securely generates and renders HTML/Markdown artifacts right next to your chat!
+- **Idempotent Ingestion**: Easily keep your knowledge base up-to-date with intelligent hashing.
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd LennyLens
-    ```
+## 🛠 Prerequisites
+- Docker & Docker Compose
+- (Optional) Local Ollama instance running `llama3` if not using Anthropic.
 
-2.  **Environment Variables:**
-    Copy the example environment file and fill in your details:
-    ```bash
-    cp .env.example .env
-    ```
+## 🚀 Getting Started
 
-3.  **Backend (Python/FastAPI):**
-    ```bash
-    python -m venv .venv
-    # Activate virtual environment (e.g., .venv\Scripts\activate on Windows)
-    pip install -r requirements.txt # coming soon
-    ```
+1. **Clone & Configure**
+   ```bash
+   cp .env.example .env
+   # Add your ANTHROPIC_API_KEY if desired.
+   ```
 
-4.  **Frontend (React/Vite):**
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
+2. **Run via Docker Compose**
+   ```bash
+   docker-compose up --build
+   ```
+
+3. **Access the App**
+   Open your browser and navigate to `http://localhost`.
+
+## 📚 Documentation
+- [Architecture](docs/architecture.md)
+- [Design Decisions](docs/design.md)
+- [Manual Test Plan](docs/manual-test-plan.md)
+
+## 🔧 Troubleshooting
+- **Database Connection Fails**: Ensure port 5433 isn't blocked and the `pgvector` container is healthy.
+- **Ollama Timeout**: If using a local model, ensure `host.docker.internal` is accessible from the container.
+
+---
+*Built with FastAPI, React, TailwindCSS, and PostgreSQL/pgvector.*
