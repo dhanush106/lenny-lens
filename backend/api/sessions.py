@@ -5,6 +5,15 @@ from typing import List
 from backend.db.session import get_db
 from backend.schemas.session import SessionResponse, SessionCreate, MessageResponse, MessageCreate
 from backend.services import session as session_service
+from backend.agent.router import AgentRouter
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    message: MessageResponse
+    sources: list = []
 
 router = APIRouter()
 
@@ -54,3 +63,37 @@ async def post_message(
     if not db_session:
         raise HTTPException(status_code=404, detail="Session not found")
     return await session_service.add_message(db=db, session_id=session_id, message_in=message_in)
+
+@router.post("/{session_id}/chat", response_model=ChatResponse)
+async def chat_with_agent(
+    session_id: int,
+    request: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: int = Depends(get_current_user_id)
+):
+    # Validate session belongs to user
+    db_session = await session_service.get_session(db=db, session_id=session_id, user_id=user_id)
+    if not db_session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # 1. Persist user message
+    user_msg_in = MessageCreate(session_id=session_id, role="user", content=request.message)
+    await session_service.add_message(db=db, session_id=session_id, message_in=user_msg_in)
+    
+    # 2. Invoke Agent Router
+    agent = AgentRouter()
+    # In a fully fleshed out version, we would pass the session history as well
+    response_data = await agent.route_request(request.message)
+    
+    # 3. Persist assistant message
+    assistant_msg_in = MessageCreate(
+        session_id=session_id, 
+        role="assistant", 
+        content=response_data.get("answer", "")
+    )
+    assistant_msg = await session_service.add_message(db=db, session_id=session_id, message_in=assistant_msg_in)
+    
+    return ChatResponse(
+        message=MessageResponse.model_validate(assistant_msg),
+        sources=response_data.get("sources", [])
+    )
