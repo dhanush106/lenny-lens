@@ -39,7 +39,7 @@ export default function ArtifactViewer({ activeArtifact, onClose }) {
       return (
         <iframe
           srcDoc={srcDoc}
-          sandbox="allow-scripts" // Depending on security policy, we might remove allow-scripts
+          sandbox=""
           className="w-full h-full border-0 bg-white"
           title="Artifact Preview"
         />

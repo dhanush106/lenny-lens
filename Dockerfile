@@ -12,5 +12,6 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
-# Start FastAPI
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Apply schema migrations before starting the API. This makes a fresh Compose
+# startup reproducible instead of requiring a manual database setup step.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]

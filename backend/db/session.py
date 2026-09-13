@@ -14,6 +14,11 @@ AsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,
 )
 
+# Keep a descriptive factory name for application code and scripts.  The
+# previous name was imported throughout the project but was never defined,
+# which prevented the API from importing at all.
+async_session_maker = AsyncSessionLocal
+
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session

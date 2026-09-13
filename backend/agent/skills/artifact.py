@@ -1,6 +1,9 @@
+import json
+
 from backend.services.llm import get_llm_provider
 from backend.services.retrieval import RetrievalService
 from backend.db.session import AsyncSessionLocal
+from backend.services.security import sanitize_html
 
 class ArtifactSkill:
     def __init__(self):
@@ -41,6 +44,26 @@ class ArtifactSkill:
             answer = await self.llm.generate_response(prompt, system_prompt=system_prompt)
             
             return {
-                "answer": answer,  # This will be the JSON string which frontend can parse
+                "answer": self._validate_and_sanitize_artifact(answer),
                 "sources": sources
             }
+
+    @staticmethod
+    def _validate_and_sanitize_artifact(answer: str) -> str:
+        """Keep the persisted artifact contract strict and treat HTML as untrusted."""
+        try:
+            artifact = json.loads(answer)
+        except json.JSONDecodeError:
+            return "I couldn't create a valid artifact. Please try again."
+
+        if not isinstance(artifact, dict) or artifact.get("artifact_type") not in {"html", "markdown"}:
+            return "I couldn't create a supported artifact. Please request HTML or Markdown."
+
+        content = artifact.get("content")
+        if not isinstance(content, str):
+            return "I couldn't create a valid artifact. Please try again."
+
+        artifact["title"] = str(artifact.get("title") or "Generated Artifact")
+        if artifact["artifact_type"] == "html":
+            artifact["content"] = sanitize_html(content)
+        return json.dumps(artifact)

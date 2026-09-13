@@ -64,7 +64,14 @@ async def ingest_file(session: AsyncSession, filepath: str):
     for i, c_text in enumerate(text_chunks):
         # Generate dummy embedding (or real if ollama is running, but let's just insert a dummy for speed in this demo)
         dummy_embedding = [0.0] * 384
-        chunk = Chunk(transcript_id=transcript.id, text=c_text, embedding=dummy_embedding)
+        start_time = float(i * 1000)
+        chunk = Chunk(
+            transcript_id=transcript.id,
+            start_time=start_time,
+            end_time=start_time + float(len(c_text)),
+            text=c_text,
+            embedding=dummy_embedding,
+        )
         session.add(chunk)
         
     await session.commit()

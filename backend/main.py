@@ -44,7 +44,11 @@ def create_app() -> FastAPI:
             user = result.scalar_one_or_none()
             if not user:
                 # Create default user
-                user = User(username="admin", email="admin@example.com")
+                user = User(
+                    id=1,
+                    email="local-demo@example.invalid",
+                    hashed_password="local-demo-account-not-for-authentication",
+                )
                 session.add(user)
                 await session.commit()
 
