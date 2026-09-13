@@ -14,17 +14,21 @@ class OllamaProvider:
         self.model = model
 
     async def generate_response(self, prompt: str, system_prompt: Optional[str] = None) -> str:
-        async with httpx.AsyncClient() as client:
-            payload = {
-                "model": self.model,
-                "prompt": prompt,
-                "system": system_prompt or "",
-                "stream": False
-            }
-            response = await client.post(f"{self.base_url}/api/generate", json=payload, timeout=60.0)
-            response.raise_for_status()
-            data = response.json()
-            return data.get("response", "")
+        try:
+            async with httpx.AsyncClient() as client:
+                payload = {
+                    "model": self.model,
+                    "prompt": prompt,
+                    "system": system_prompt or "",
+                    "stream": False
+                }
+                response = await client.post(f"{self.base_url}/api/generate", json=payload, timeout=60.0)
+                response.raise_for_status()
+                data = response.json()
+                return data.get("response", "")
+        except Exception as e:
+            # Fallback gracefully if Ollama is unreachable
+            return f"I am unable to reach the Ollama model right now. Error: {str(e)}"
 
 class AnthropicProvider:
     def __init__(self, api_key: str, model: str = "claude-3-haiku-20240307"):
