@@ -20,6 +20,13 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.middleware("http")
+    async def add_security_headers(request, call_next):
+        response = await call_next(request)
+        # Content Security Policy to prevent XSS in artifact rendering
+        response.headers["Content-Security-Policy"] = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'; object-src 'none';"
+        return response
+
     # Add exception handlers
     add_exception_handlers(app)
 
