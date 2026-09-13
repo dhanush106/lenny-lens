@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lennylens
+    ports:
+      - "5432:5432"
+    volumes:
+      - lennylens_data_v1:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  lennylens_data_v1:
