@@ -1,8 +1,9 @@
-import os
 from typing import Protocol, Optional
 import httpx
 # pyrefly: ignore [missing-import]
 from anthropic import AsyncAnthropic
+from backend.core.config import settings
+from backend.core.exceptions import ServiceUnavailableError
 
 class LLMProvider(Protocol):
     async def generate_response(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -26,9 +27,11 @@ class OllamaProvider:
                 response.raise_for_status()
                 data = response.json()
                 return data.get("response", "")
-        except Exception as e:
-            # Fallback gracefully if Ollama is unreachable
-            return f"I am unable to reach the Ollama model right now. Error: {str(e)}"
+        except httpx.HTTPError as exc:
+            raise ServiceUnavailableError(
+                "ollama_unavailable",
+                "The configured Ollama model is unavailable. Start Ollama and pull the configured model.",
+            ) from exc
 
 class AnthropicProvider:
     def __init__(self, api_key: str, model: str = "claude-3-haiku-20240307"):
@@ -47,14 +50,12 @@ class AnthropicProvider:
         return response.content[0].text
 
 def get_llm_provider() -> LLMProvider:
-    provider = os.getenv("LLM_PROVIDER", "ollama")
+    provider = settings.LLM_PROVIDER.lower()
     if provider == "anthropic":
-        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        api_key = settings.ANTHROPIC_API_KEY
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY is missing")
         return AnthropicProvider(api_key=api_key)
     else:
         # Default to Ollama
-        model = os.getenv("OLLAMA_MODEL", "llama3")
-        base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-        return OllamaProvider(base_url=base_url, model=model)
+        return OllamaProvider(base_url=settings.OLLAMA_BASE_URL, model=settings.OLLAMA_MODEL)

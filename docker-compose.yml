@@ -26,6 +26,8 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
     env_file:
       - .env
+    volumes:
+      - ./data/transcripts:/app/data/transcripts:ro
     depends_on:
       db:
         condition: service_healthy

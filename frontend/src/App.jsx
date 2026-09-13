@@ -62,7 +62,12 @@ function App() {
     try {
       const res = await sendMessage(activeSessionId, text);
       const assistantMsg = res.data.message;
-      setMessages(prev => [...prev, assistantMsg]);
+      const isArtifact = assistantMsg.content.trim().startsWith('{') && assistantMsg.content.includes('"artifact_type"');
+      const sources = res.data.sources || [];
+      const sourceSummary = sources.length && !isArtifact
+        ? `\n\n---\n**Sources**\n${sources.map((source, index) => `${index + 1}. ${source.title || source.video_id || `Transcript ${source.transcript_id}`} (relevance: ${source.score ?? 'n/a'})`).join('\n')}`
+        : '';
+      setMessages(prev => [...prev, { ...assistantMsg, content: assistantMsg.content + sourceSummary }]);
       
       // Check if the response contains an artifact
       try {
@@ -73,8 +78,9 @@ function App() {
 
     } catch (err) {
       console.error("Failed to send message", err);
-      // fallback error message
-      setMessages(prev => [...prev, { role: 'assistant', content: "An error occurred while generating a response." }]);
+      const detail = err.response?.data?.detail;
+      const message = typeof detail === 'object' ? detail.message : detail;
+      setMessages(prev => [...prev, { role: 'assistant', content: message || "An error occurred while generating a response." }]);
     } finally {
       setLoading(false);
     }

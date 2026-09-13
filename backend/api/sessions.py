@@ -1,3 +1,7 @@
+import json
+import logging
+import time
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -16,6 +20,7 @@ class ChatResponse(BaseModel):
     sources: list = []
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Dependency for mocking auth
 def get_current_user_id() -> int:
@@ -71,6 +76,7 @@ async def chat_with_agent(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_current_user_id)
 ):
+    started_at = time.perf_counter()
     # Validate session belongs to user
     db_session = await session_service.get_session(db=db, session_id=session_id, user_id=user_id)
     if not db_session:
@@ -80,10 +86,14 @@ async def chat_with_agent(
     user_msg_in = MessageCreate(session_id=session_id, role="user", content=request.message)
     await session_service.add_message(db=db, session_id=session_id, message_in=user_msg_in)
     
+    history = [
+        {"role": message.role, "content": message.content}
+        for message in await session_service.get_session_messages(db=db, session_id=session_id)
+    ]
+
     # 2. Invoke Agent Router
     agent = AgentRouter()
-    # In a fully fleshed out version, we would pass the session history as well
-    response_data = await agent.route_request(request.message)
+    response_data = await agent.route_request(request.message, history)
     
     # 3. Persist assistant message
     assistant_msg_in = MessageCreate(
@@ -93,6 +103,12 @@ async def chat_with_agent(
     )
     assistant_msg = await session_service.add_message(db=db, session_id=session_id, message_in=assistant_msg_in)
     
+    logger.info(json.dumps({
+        "event": "chat_completed",
+        "session_id": session_id,
+        "source_count": len(response_data.get("sources", [])),
+        "duration_ms": round((time.perf_counter() - started_at) * 1000, 2),
+    }))
     return ChatResponse(
         message=MessageResponse.model_validate(assistant_msg),
         sources=response_data.get("sources", [])

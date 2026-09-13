@@ -3,7 +3,24 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+
+class ServiceUnavailableError(Exception):
+    """A dependency needed to fulfill a request is unavailable."""
+
+    def __init__(self, code: str, message: str):
+        self.code = code
+        self.message = message
+        super().__init__(message)
+
 def add_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(ServiceUnavailableError)
+    async def service_unavailable_handler(
+        request: Request, exc: ServiceUnavailableError
+    ):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": {"code": exc.code, "message": exc.message}},
+        )
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         return JSONResponse(

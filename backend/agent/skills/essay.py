@@ -1,6 +1,7 @@
 from backend.services.llm import get_llm_provider
 from backend.services.retrieval import RetrievalService
 from backend.db.session import AsyncSessionLocal
+from backend.core.config import settings
 
 class EssaySkill:
     def __init__(self):
@@ -10,7 +11,8 @@ class EssaySkill:
     async def execute(self, query: str) -> dict:
         async with AsyncSessionLocal() as session:
             # 1. Retrieve transcripts context
-            chunks = await self.retrieval_service.search(session, query, top_k=5)
+            chunks = await self.retrieval_service.search(session, query, top_k=settings.RETRIEVAL_TOP_K)
+            chunks = [item for item in chunks if item.score >= settings.RETRIEVAL_MIN_SCORE]
             
             if not chunks:
                 return {
@@ -20,11 +22,14 @@ class EssaySkill:
             
             context_text = ""
             sources = []
-            for idx, chunk in enumerate(chunks, 1):
+            for idx, item in enumerate(chunks, 1):
+                chunk = item.chunk
                 context_text += f"\n--- Source [{idx}] ---\n{chunk.text}\n"
                 sources.append({
                     "id": chunk.id,
                     "transcript_id": chunk.transcript_id,
+                    "title": chunk.transcript.title,
+                    "score": round(item.score, 4),
                     "text_preview": chunk.text[:100] + "..."
                 })
 

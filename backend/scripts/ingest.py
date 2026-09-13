@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from backend.db.session import async_session_maker
 from backend.models import Transcript, Chunk
+from backend.services.embeddings import get_embedding_provider
 
 def get_file_hash(filepath: str) -> str:
     hasher = hashlib.sha256()
@@ -60,17 +61,17 @@ async def ingest_file(session: AsyncSession, filepath: str):
         text = f.read()
         
     text_chunks = basic_chunker(text)
+    embedding_provider = get_embedding_provider()
+    embeddings = await embedding_provider.generate_embeddings(text_chunks)
     
     for i, c_text in enumerate(text_chunks):
-        # Generate dummy embedding (or real if ollama is running, but let's just insert a dummy for speed in this demo)
-        dummy_embedding = [0.0] * 384
         start_time = float(i * 1000)
         chunk = Chunk(
             transcript_id=transcript.id,
             start_time=start_time,
             end_time=start_time + float(len(c_text)),
             text=c_text,
-            embedding=dummy_embedding,
+            embedding=embeddings[i],
         )
         session.add(chunk)
         
@@ -83,16 +84,20 @@ async def main():
     args = parser.parse_args()
     
     if not os.path.exists(args.dir):
-        print(f"Directory {args.dir} does not exist.")
-        # Create it so it doesn't fail
-        os.makedirs(args.dir, exist_ok=True)
-        return
+        raise SystemExit(
+            f"Transcript directory '{args.dir}' does not exist. Add authoritative .md files "
+            "before running ingestion; an empty directory does not create a knowledge base."
+        )
         
     async with async_session_maker() as session:
-        for filename in os.listdir(args.dir):
-            if filename.endswith('.md'):
-                filepath = os.path.join(args.dir, filename)
-                await ingest_file(session, filepath)
+        transcript_files = [name for name in os.listdir(args.dir) if name.endswith(".md")]
+        if not transcript_files:
+            raise SystemExit(
+                f"No .md transcript files found in '{args.dir}'. Nothing was ingested."
+            )
+        for filename in transcript_files:
+            filepath = os.path.join(args.dir, filename)
+            await ingest_file(session, filepath)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -4,6 +4,7 @@ from backend.services.llm import get_llm_provider
 from backend.services.retrieval import RetrievalService
 from backend.db.session import AsyncSessionLocal
 from backend.services.security import sanitize_html
+from backend.core.config import settings
 
 class ArtifactSkill:
     def __init__(self):
@@ -13,18 +14,27 @@ class ArtifactSkill:
     async def execute(self, query: str) -> dict:
         async with AsyncSessionLocal() as session:
             # 1. Retrieve transcripts context
-            chunks = await self.retrieval_service.search(session, query, top_k=3)
+            chunks = await self.retrieval_service.search(session, query, top_k=min(3, settings.RETRIEVAL_TOP_K))
+            chunks = [item for item in chunks if item.score >= settings.RETRIEVAL_MIN_SCORE]
             
             context_text = ""
             sources = []
             if chunks:
-                for idx, chunk in enumerate(chunks, 1):
+                for idx, item in enumerate(chunks, 1):
+                    chunk = item.chunk
                     context_text += f"\n--- Source [{idx}] ---\n{chunk.text}\n"
                     sources.append({
                         "id": chunk.id,
                         "transcript_id": chunk.transcript_id,
+                        "title": chunk.transcript.title,
+                        "score": round(item.score, 4),
                         "text_preview": chunk.text[:100] + "..."
                     })
+            else:
+                return {
+                    "answer": "I don't have enough transcript evidence to create a grounded artifact on that topic.",
+                    "sources": [],
+                }
 
             # 2. Build Artifact Prompt
             system_prompt = (

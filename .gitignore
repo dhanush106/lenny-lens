@@ -10,6 +10,7 @@ dist/
 
 # Environment
 .env
+data/transcripts/
 
 # MacOS
 .DS_Store
