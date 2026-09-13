@@ -7,8 +7,9 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: lennylens
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - lennylens_data_v1:/var/lib/postgresql/data
     restart: unless-stopped
