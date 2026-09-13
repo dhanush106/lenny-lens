@@ -1,0 +1,36 @@
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+
+class MessageBase(BaseModel):
+    role: str
+    content: str
+
+class MessageCreate(MessageBase):
+    pass
+
+class MessageResponse(MessageBase):
+    id: int
+    session_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class SessionBase(BaseModel):
+    title: Optional[str] = None
+
+class SessionCreate(SessionBase):
+    user_id: int
+
+class SessionResponse(SessionBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class SessionWithMessages(SessionResponse):
+    messages: List[MessageResponse] = []
