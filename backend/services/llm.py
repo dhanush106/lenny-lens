@@ -1,6 +1,7 @@
 import os
 from typing import Protocol, Optional
 import httpx
+# pyrefly: ignore [missing-import]
 from anthropic import AsyncAnthropic
 
 class LLMProvider(Protocol):
