@@ -2,12 +2,14 @@ import json
 from backend.services.llm import get_llm_provider
 from backend.agent.skills.qna import QnASkill
 from backend.agent.skills.essay import EssaySkill
+from backend.agent.skills.artifact import ArtifactSkill
 
 class AgentRouter:
     def __init__(self):
         self.llm = get_llm_provider()
         self.qna_skill = QnASkill()
         self.essay_skill = EssaySkill()
+        self.artifact_skill = ArtifactSkill()
 
     async def route_request(self, user_message: str) -> dict:
         # Simple intent classification
@@ -37,7 +39,7 @@ class AgentRouter:
         elif intent == "Essay":
             return await self.essay_skill.execute(user_message)
         elif intent == "Artifact":
-            return {"answer": "Artifact generation skill is not yet implemented.", "sources": []}
+            return await self.artifact_skill.execute(user_message)
         else:
             # Basic conversational fallback
             return {"answer": "I'm the Lenny Growth Assistant. How can I help you today?", "sources": []}
