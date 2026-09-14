@@ -2,17 +2,45 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Chat from './components/Chat';
 import ArtifactViewer from './components/ArtifactViewer';
-import { getSessions, createSession, getMessages, sendMessage } from './api';
+import { getSessions, createSession, getMessages, sendMessage, getRuntime } from './api';
+
+function classifyIntent(text) {
+  const normalized = text.toLowerCase();
+  if (normalized.includes('essay') || normalized.includes('ship 30')) return 'essay';
+  if (/(html|css|canvas|artifact|markdown)/.test(normalized) && /(generat|creat|build|make|render)/.test(normalized)) {
+    return 'artifact';
+  }
+  return 'qna';
+}
+
+function loadingCopy(intent) {
+  if (intent === 'essay') return 'Writing Ship 30 essay…';
+  if (intent === 'artifact') return 'Rendering artifact…';
+  return 'Retrieving transcripts…';
+}
+
+function latestArtifact(msgs) {
+  for (let i = msgs.length - 1; i >= 0; i -= 1) {
+    if (msgs[i].artifact) return msgs[i].artifact;
+  }
+  return null;
+}
 
 function App() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingIntent, setLoadingIntent] = useState('qna');
   const [activeArtifact, setActiveArtifact] = useState(null);
+  const [highlightedSource, setHighlightedSource] = useState(null);
+  const [runtime, setRuntime] = useState(null);
 
   useEffect(() => {
     fetchSessions();
+    getRuntime()
+      .then((res) => setRuntime(res.data))
+      .catch(() => setRuntime(null));
   }, []);
 
   const fetchSessions = async () => {
@@ -23,99 +51,107 @@ function App() {
         handleSelectSession(res.data[0].id);
       }
     } catch (err) {
-      console.error("Failed to fetch sessions", err);
+      console.error('Failed to fetch sessions', err);
     }
   };
 
   const handleSelectSession = async (id) => {
     setActiveSessionId(id);
-    setActiveArtifact(null); // Close artifact on session switch
+    setHighlightedSource(null);
     try {
       const res = await getMessages(id);
       setMessages(res.data);
-      checkForArtifacts(res.data);
+      setActiveArtifact(latestArtifact(res.data));
     } catch (err) {
-      console.error("Failed to fetch messages", err);
+      console.error('Failed to fetch messages', err);
     }
   };
 
   const handleNewSession = async () => {
     try {
-      const res = await createSession("New Chat " + (sessions.length + 1));
+      const res = await createSession(`New Chat ${sessions.length + 1}`);
       setSessions([res.data, ...sessions]);
       setActiveSessionId(res.data.id);
       setMessages([]);
       setActiveArtifact(null);
+      setHighlightedSource(null);
     } catch (err) {
-      console.error("Failed to create session", err);
+      console.error('Failed to create session', err);
     }
   };
 
-  const handleSendMessage = async (text) => {
-    if (!activeSessionId) return;
+  const handleHighlightSource = (n) => {
+    setHighlightedSource(n);
+    const card = document.getElementById(`source-card-${n}`);
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
 
-    // Optimistically add user message
+  const handleSendMessage = async (text) => {
+    let sessionId = activeSessionId;
+    if (!sessionId) {
+      try {
+        const created = await createSession('New Chat');
+        sessionId = created.data.id;
+        setSessions((prev) => [created.data, ...prev]);
+        setActiveSessionId(sessionId);
+      } catch (err) {
+        console.error('Failed to create session', err);
+        return;
+      }
+    }
+
     const userMsg = { role: 'user', content: text };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
+    setLoadingIntent(classifyIntent(text));
     setLoading(true);
 
     try {
-      const res = await sendMessage(activeSessionId, text);
-      const assistantMsg = res.data.message;
-      const isArtifact = assistantMsg.content.trim().startsWith('{') && assistantMsg.content.includes('"artifact_type"');
-      const sources = res.data.sources || [];
-      const sourceSummary = sources.length && !isArtifact
-        ? `\n\n---\n**Sources**\n${sources.map((source, index) => `${index + 1}. ${source.title || source.video_id || `Transcript ${source.transcript_id}`} (relevance: ${source.score ?? 'n/a'})`).join('\n')}`
-        : '';
-      setMessages(prev => [...prev, { ...assistantMsg, content: assistantMsg.content + sourceSummary }]);
-      
-      // Check if the response contains an artifact
-      try {
-        if (assistantMsg.content.trim().startsWith('{') && assistantMsg.content.includes('"artifact_type"')) {
-          setActiveArtifact(assistantMsg.content);
-        }
-      } catch (e) {}
-
+      const res = await sendMessage(sessionId, text);
+      const assistantMsg = {
+        ...res.data.message,
+        sources: res.data.sources || res.data.message.sources || [],
+        artifact: res.data.artifact || res.data.message.artifact || null,
+        error: res.data.error || null,
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+      if (assistantMsg.artifact) {
+        setActiveArtifact(assistantMsg.artifact);
+      }
     } catch (err) {
-      console.error("Failed to send message", err);
+      console.error('Failed to send message', err);
       const detail = err.response?.data?.detail;
       const message = typeof detail === 'object' ? detail.message : detail;
-      setMessages(prev => [...prev, { role: 'assistant', content: message || "An error occurred while generating a response." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: message || 'An error occurred while generating a response.' },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const checkForArtifacts = (msgs) => {
-    // Look backwards for the most recent artifact
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      const content = msgs[i].content;
-      try {
-        if (content.trim().startsWith('{') && content.includes('"artifact_type"')) {
-          JSON.parse(content);
-          setActiveArtifact(content);
-          return;
-        }
-      } catch (e) {}
-    }
-  };
-
   return (
-    <div className="flex h-screen w-full bg-slate-950 font-sans antialiased text-slate-200 overflow-hidden">
-      <Sidebar 
-        sessions={sessions} 
-        activeSessionId={activeSessionId} 
+    <div className="workspace-shell flex h-screen w-full bg-slate-950 font-sans antialiased text-slate-200 overflow-hidden">
+      <Sidebar
+        sessions={sessions}
+        activeSessionId={activeSessionId}
         onSelectSession={handleSelectSession}
         onNewSession={handleNewSession}
+        runtime={runtime}
+        onRuntimeChange={setRuntime}
       />
-      <Chat 
-        messages={messages} 
-        onSendMessage={handleSendMessage} 
+      <Chat
+        messages={messages}
+        onSendMessage={handleSendMessage}
         loading={loading}
+        loadingLabel={loadingCopy(loadingIntent)}
+        onOpenArtifact={setActiveArtifact}
+        highlightedSource={highlightedSource}
+        onHighlightSource={handleHighlightSource}
       />
-      <ArtifactViewer 
-        activeArtifact={activeArtifact} 
-        onClose={() => setActiveArtifact(null)} 
+      <ArtifactViewer
+        artifact={activeArtifact}
+        onClose={() => setActiveArtifact(null)}
       />
     </div>
   );

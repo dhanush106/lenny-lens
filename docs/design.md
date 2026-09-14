@@ -3,35 +3,37 @@
 ## Product experience
 
 LennyLens is designed for product and growth teams who need evidence before
-recommendations. The primary flow is intentionally short: create a session,
-ask a question, inspect the source references, and optionally turn the
-grounded material into an essay or artifact.
+recommendations. The primary flow is short: create a session, ask a question,
+inspect source cards, then turn the same evidence into a Ship 30 essay or a
+sandboxed HTML artifact.
 
 ## Information architecture
 
-- **Sidebar:** session history and a clear new-chat action.
-- **Chat pane:** the active conversation, loading state, and model response.
-- **Artifact pane:** a side-by-side preview so generated work does not replace
-  the research conversation.
+- **Sidebar:** session history, new chat, and the active provider/model badge
+  from `/api/v1/runtime`.
+- **Chat pane:** conversation, starter chips, skill-aware loading copy, inline
+  `[n]` citation chips, and source cards with quote + guest + episode link.
+- **Artifact pane:** Preview and Source tabs, copy, download, and pop-out. On
+  small screens it is a full-viewport overlay; on desktop it sits beside chat.
 
 ## Key states
 
-- Empty session: explains the three supported tasks.
-- Loading: disables duplicate sends and communicates that a response is in
-  progress.
-- Empty retrieval: the assistant says that transcript evidence is insufficient
-  instead of inventing an answer.
-- Artifact: JSON is summarized in chat and rendered in the dedicated pane.
+- Empty session: three starter chips (Q&A, Ship 30, HTML canvas).
+- Loading: send is disabled; copy names the skill
+  (“Retrieving transcripts…”, “Writing Ship 30 essay…”, “Rendering artifact…”).
+- Empty retrieval: honest refusal, no invented guests.
+- Artifact: chat shows a human summary plus an Open card; the pane renders the
+  structured payload. Refresh restores the latest artifact on the session.
 
 ## Accessibility and responsive behavior
 
-The UI uses semantic buttons and form controls, visible focus styles, readable
-contrast, and text labels/placeholders. On narrower screens, the artifact pane
-should be treated as a secondary view; a future iteration should make it a
-full-width drawer rather than retaining the current fixed minimum width.
+Inputs have labels, icon buttons have `aria-label`, focus styles are visible,
+and contrast stays on the slate/cyan palette. The artifact viewer is an overlay
+below the `md` breakpoint so it does not crush the chat column.
 
 ## Artifact trust boundary
 
-Generated HTML is sanitized server-side and rendered in an iframe with an empty
-`sandbox` attribute. The preview cannot execute scripts, navigate the parent,
-or access same-origin data. Markdown is rendered as text through ReactMarkdown.
+Generated HTML is untrusted. The server allowlists tags and CSS, then the
+viewer renders inside an iframe with an empty `sandbox` attribute and a CSP
+that allows only inline styles. Markdown is rendered as text through
+ReactMarkdown. Scripts, forms, iframes, and network requests are blocked.

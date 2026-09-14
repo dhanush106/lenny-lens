@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Any, List, Optional
 from datetime import datetime
 
 class MessageBase(BaseModel):
@@ -13,9 +13,12 @@ class MessageResponse(MessageBase):
     id: int
     session_id: int
     created_at: datetime
+    sources: Optional[List[dict[str, Any]]] = None
+    artifact: Optional[dict[str, Any]] = None
+    error: Optional[dict[str, Any]] = None
+    grounding: Optional[dict[str, Any]] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SessionBase(BaseModel):
     title: Optional[str] = None
@@ -29,8 +32,7 @@ class SessionResponse(SessionBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SessionWithMessages(SessionResponse):
     messages: List[MessageResponse] = []

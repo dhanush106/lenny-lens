@@ -1,55 +1,68 @@
+import re
+
+from backend.agent.intents import expand_retrieval_query
+from backend.agent.skills.ship30_playbook import SHIP30_SYSTEM_PROMPT
+from backend.services.citations import (
+    citation_footer,
+    conversation_history,
+    filter_used_sources,
+    format_context,
+    numbered_sources,
+)
 from backend.services.llm import get_llm_provider
 from backend.services.retrieval import RetrievalService
 from backend.db.session import AsyncSessionLocal
 from backend.core.config import settings
 
+
+def essay_title(markdown: str, fallback: str = "Ship 30 essay") -> str:
+    for line in markdown.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            return re.sub(r"^#+\s*", "", stripped).strip() or fallback
+    return fallback[:80]
+
+
 class EssaySkill:
+    """Dedicated Ship 30 for 30 skill: retrieve evidence, then write to the playbook."""
+
     def __init__(self):
         self.llm = get_llm_provider()
         self.retrieval_service = RetrievalService()
 
-    async def execute(self, query: str) -> dict:
+    async def execute(self, query: str, history: list[dict] | None = None) -> dict:
+        retrieval_query = expand_retrieval_query(query, history)
         async with AsyncSessionLocal() as session:
-            # 1. Retrieve transcripts context
-            chunks = await self.retrieval_service.search(session, query, top_k=settings.RETRIEVAL_TOP_K)
+            chunks = await self.retrieval_service.search(session, retrieval_query, top_k=settings.RETRIEVAL_TOP_K)
             chunks = [item for item in chunks if item.score >= settings.RETRIEVAL_MIN_SCORE]
-            
+
             if not chunks:
                 return {
-                    "answer": "I don't have enough information in the podcast transcripts to write an essay on that topic.",
-                    "sources": []
+                    "answer": "I don't have enough information in the podcast transcripts to write a grounded Ship 30 essay on that topic.",
+                    "sources": [],
                 }
-            
-            context_text = ""
-            sources = []
-            for idx, item in enumerate(chunks, 1):
-                chunk = item.chunk
-                context_text += f"\n--- Source [{idx}] ---\n{chunk.text}\n"
-                sources.append({
-                    "id": chunk.id,
-                    "transcript_id": chunk.transcript_id,
-                    "title": chunk.transcript.title,
-                    "score": round(item.score, 4),
-                    "text_preview": chunk.text[:100] + "..."
-                })
 
-            # 2. Build Ship 30 for 30 Essay Prompt
-            system_prompt = (
-                "You are an expert essay writer using the 'Ship 30 for 30' principles. "
-                "Write an essay based on the provided user topic and strictly grounded in the provided context. "
-                "Your essay should be approximately 1,250 words and must include:\n"
-                "- A strong hook and clear narrative progression.\n"
-                "- Skimmable formatting with headings, bullets, and selective bold emphasis.\n"
-                "- A specific, useful takeaway.\n"
-                "Do NOT hallucinate information outside of the provided context. "
-                "Cite sources when making claims using [1], [2], etc."
+            sources = numbered_sources(chunks)
+            prompt = (
+                f"Conversation context:\n{conversation_history(history) or '(none)'}\n\n"
+                f"Transcript evidence:\n{format_context(chunks)}\n\n"
+                f"Essay request:\n{query}"
             )
-            
-            prompt = f"Context:\n{context_text}\n\nEssay Topic:\n{query}"
-            
-            answer = await self.llm.generate_response(prompt, system_prompt=system_prompt)
-            
+            essay = await self.llm.generate_response(
+                prompt, system_prompt=SHIP30_SYSTEM_PROMPT, max_tokens=4500
+            )
+            used = filter_used_sources(essay, sources)
+            footer = citation_footer(used)
+            if footer and "## Sources" not in essay:
+                essay = f"{essay.rstrip()}\n\n## Sources\n\n{footer}\n"
+            title = essay_title(essay)
             return {
-                "answer": answer,
-                "sources": sources
+                "answer": f"Wrote a Ship 30 for 30 essay: {title}",
+                "sources": used,
+                "artifact": {
+                    "type": "markdown",
+                    "title": title,
+                    "content": essay,
+                    "summary": f"Ship 30 essay grounded in {len(used)} transcript sources.",
+                },
             }

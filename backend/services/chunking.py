@@ -16,10 +16,23 @@ class ChunkingService:
         
         while start < text_length:
             end = start + self.chunk_size
-            chunks.append(text[start:end])
+            if end < text_length:
+                boundary_start = start + int(self.chunk_size * 0.6)
+                sentence_boundary = max(
+                    text.rfind(". ", boundary_start, end),
+                    text.rfind("? ", boundary_start, end),
+                    text.rfind("! ", boundary_start, end),
+                    text.rfind("\n", boundary_start, end),
+                    text.rfind(" ", boundary_start, end),
+                )
+                if sentence_boundary > start:
+                    end = sentence_boundary + 1
+            chunks.append(text[start:end].strip())
             if end >= text_length:
                 break
-            start += (self.chunk_size - self.overlap)
+            next_start = max(start + 1, end - self.overlap)
+            word_boundary = text.find(" ", next_start, min(text_length, next_start + 40))
+            start = word_boundary + 1 if word_boundary >= 0 else next_start
             
         return chunks
 

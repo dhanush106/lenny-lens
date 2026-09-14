@@ -10,5 +10,6 @@ httpx
 pytest-asyncio
 pgvector
 anthropic
+openai
 bleach
 tinycss2

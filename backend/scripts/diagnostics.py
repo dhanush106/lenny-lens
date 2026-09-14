@@ -12,6 +12,7 @@ from backend.db.session import AsyncSessionLocal
 from backend.models import Chunk, Transcript
 from backend.services.embeddings import get_embedding_provider
 from backend.services.retrieval import RetrievalService
+from backend.core.config import settings
 
 
 async def main() -> None:
@@ -33,6 +34,7 @@ async def main() -> None:
         print(f"Transcripts: {transcript_count}")
         print(f"Chunks: {chunk_count}")
         print(f"Chunks with embeddings: {embedded_count}")
+        print(f"Retrieval mode: {settings.RETRIEVAL_MODE}")
         print(f"Embedding model: {provider.model_name}")
         print(f"Embedding dimension: {provider.dimensions}")
 

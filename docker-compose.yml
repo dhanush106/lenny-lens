@@ -27,7 +27,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./data/transcripts:/app/data/transcripts:ro
+      - ./data/lennys-podcast-transcripts/episodes:/app/data/transcripts:ro
     depends_on:
       db:
         condition: service_healthy

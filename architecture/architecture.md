@@ -252,28 +252,37 @@ Response:
 ```
 
 ### 5.6 Artifact generation
-Request:
+Artifacts are created by the essay and artifact skills during chat. There is no separate `POST /artifacts` route; the chat response carries a first-class `artifact` object and the same payload is persisted on `messages.artifact`.
+
 ```http
-POST /api/v1/artifacts
+POST /api/v1/sessions/{session_id}/chat
 ```
-Body:
+
 ```json
 {
-  "session_id": "uuid",
-  "instruction": "Create a product strategy summary from this discussion.",
-  "format": "html"
+  "message": { "role": "assistant", "content": "Created a one-page strategy canvas from 4 episodes." },
+  "intent": "artifact",
+  "sources": [
+    {
+      "n": 1,
+      "title": "Product discovery interview",
+      "guest": "Teresa Torres",
+      "source_url": "https://www.youtube.com/watch?v=xxxxx&t=94s",
+      "excerpt": "Teams validate problems before building.",
+      "timestamp": "1:34",
+      "chunk_id": 123
+    }
+  ],
+  "artifact": {
+    "type": "html",
+    "title": "Discovery canvas",
+    "content": "<h1>Canvas</h1>",
+    "summary": "A one-page canvas."
+  }
 }
 ```
-Response:
-```json
-{
-  "artifact_id": "uuid",
-  "type": "html",
-  "title": "Product Strategy Summary",
-  "content": "<html>...</html>",
-  "sources": []
-}
-```
+
+Ship 30 essays use the same contract with `"type": "markdown"` so they open in the artifact viewer instead of a chat bubble.
 
 ### 5.7 Error model
 Errors should use a consistent shape:
@@ -294,17 +303,15 @@ The application uses PostgreSQL as the durable source of truth.
 ### Core entities
 - users
 - sessions
-- messages
+- messages (content, sources JSON, artifact JSON)
 - transcripts
 - transcript_chunks
-- artifacts
 
 ### Entity relationships
 ```mermaid
 erDiagram
     USERS ||--o{ SESSIONS : owns
     SESSIONS ||--o{ MESSAGES : contains
-    SESSIONS ||--o{ ARTIFACTS : generates
     TRANSCRIPTS ||--o{ CHUNKS : includes
 ```
 
@@ -483,15 +490,19 @@ The prompt should combine:
 ---
 
 ## 10. Agent architecture and routing
-The application uses a simple agent router with a few explicit skills instead of a complex multi-agent swarm.
+The application uses a simple agent router with a few explicit skills instead of a coding-agent loop.
+
+The take-home mentions the Anthropic Claude Agent SDK and Pi Coding Agent. Those runtimes are designed for filesystem and shell work. This product is a grounded research assistant over a private transcript corpus, so giving the model a general coding loop would weaken isolation, make routing harder to test, and invite hallucinated files. Skills are explicit tools (Q&A, Ship 30, Artifact) with structured inputs and outputs. LLM calls happen after retrieval, not as an unconstrained agent.
 
 ```text
 User request
     ↓
-Agent router
+Deterministic intent classifier
     ├── Q&A skill
     ├── Ship 30 skill
     └── Artifact skill
+         ↓
+Retrieve → number evidence → generate → filter unused citations
 ```
 
 ### Routing decisions
@@ -595,7 +606,10 @@ Render in artifact viewer
 - HTML artifact
 
 ### Artifact storage
-Artifacts should be stored in the database or a durable artifact store, linked to a session.
+Artifacts are JSON on the parent assistant message (`messages.artifact`). Chat `content` is always human-readable; the viewer reopens the structured payload after refresh.
+
+### Citation contract
+Each source is numbered to match `[n]` in the answer: title, guest, excerpt, optional timestamp parsed from the transcript, and a source URL. YouTube `t=` deep links are added only when a real timestamp was parsed. Retrieval diversifies to at most two chunks per episode. Unused `[n]` sources are dropped from the UI payload.
 
 ---
 
@@ -611,12 +625,12 @@ Untrusted: user input, generated HTML, transcript content
 ```
 
 ### Security strategy
-- sanitize HTML before display
+- sanitize HTML server-side with Bleach (allowlist of tags/CSS; no scripts, forms, iframes, or network images)
 - remove event handlers and executable tags
 - block javascript: protocols
-- restrict forms, scripts, and top-level navigation
-- render in a sandboxed container or iframe boundary
-- never inject raw generated HTML directly into the main application DOM
+- render in an iframe with an empty `sandbox` attribute plus a restrictive CSP in `srcDoc`
+- never inject raw generated HTML into the main application DOM
+- Preview/Source tabs expose the sanitized markup without executing it
 
 ### Example unsafe inputs to block
 - script tags

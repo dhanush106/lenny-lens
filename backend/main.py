@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from backend.db.session import async_session_maker
@@ -8,50 +10,54 @@ from backend.core.config import settings
 from backend.core.exceptions import add_exception_handlers
 from backend.api.router import api_router
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with async_session_maker() as session:
+        result = await session.execute(select(User).filter_by(id=1))
+        user = result.scalar_one_or_none()
+        if not user:
+            session.add(
+                User(
+                    id=1,
+                    email="local-demo@example.invalid",
+                    hashed_password="local-demo-account-not-for-authentication",
+                )
+            )
+            await session.commit()
+    yield
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.PROJECT_NAME,
-        openapi_url="/api/v1/openapi.json"
+        openapi_url="/api/v1/openapi.json",
+        lifespan=lifespan,
     )
 
-    # Set all CORS enabled origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"], # In production, replace with specific origins
+        # Vite can move to a different port when its preferred port is busy, and
+        # users commonly open the local app through either loopback hostname.
+        # Keep this deliberately limited to local HTTP development origins.
+        allow_origins=["http://localhost", "http://127.0.0.1", "http://localhost:80", "http://127.0.0.1:80"],
+        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1):\d+$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
     @app.middleware("http")
-    async def add_security_headers(request, call_next):
+    async def add_security_headers(request: Request, call_next):
         response = await call_next(request)
-        # Content Security Policy to prevent XSS in artifact rendering
-        response.headers["Content-Security-Policy"] = "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'; object-src 'none';"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
         return response
 
-    # Add exception handlers
     add_exception_handlers(app)
-
-    # Include routers
     app.include_router(api_router, prefix="/api/v1")
-
-    @app.on_event("startup")
-    async def startup_event():
-        async with async_session_maker() as session:
-            # Check if user 1 exists
-            result = await session.execute(select(User).filter_by(id=1))
-            user = result.scalar_one_or_none()
-            if not user:
-                # Create default user
-                user = User(
-                    id=1,
-                    email="local-demo@example.invalid",
-                    hashed_password="local-demo-account-not-for-authentication",
-                )
-                session.add(user)
-                await session.commit()
-
     return app
+
 
 app = create_app()

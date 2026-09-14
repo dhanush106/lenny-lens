@@ -8,8 +8,8 @@ class Chunk(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     transcript_id = Column(Integer, ForeignKey("transcripts.id"), nullable=False)
-    start_time = Column(Float, nullable=False)
-    end_time = Column(Float, nullable=False)
+    start_time = Column(Float, nullable=True)
+    end_time = Column(Float, nullable=True)
     text = Column(Text, nullable=False)
     embedding = Column(Vector(384))
 

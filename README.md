@@ -1,71 +1,83 @@
-# Lenny Growth Assistant 🚀
+# Lenny Growth Assistant
 
-Lenny Growth Assistant is a full-stack, AI-powered conversational application designed to help users extract actionable product growth insights from the *Lenny's Podcast* transcripts.
+Full-stack assistant that answers product and growth questions from Lenny's Podcast transcripts, writes Ship 30 essays, and renders sandboxed HTML/Markdown artifacts beside the chat.
 
-## 🌟 Features
-- **Grounded Q&A**: Uses RAG (Retrieval-Augmented Generation) against a PostgreSQL vector database (`pgvector`) to provide grounded, hallucination-free answers.
-- **Ship 30 for 30 Engine**: Generates highly-structured essays based on podcast context.
-- **Dynamic Artifact Rendering**: Securely generates and renders HTML/Markdown artifacts right next to your chat!
-- **Idempotent Ingestion**: Easily keep your knowledge base up-to-date with intelligent hashing.
+## Features
+- **Grounded Q&A** with inline `[n]` citations, guest/episode source cards, and optional YouTube timestamps when the transcript actually contains them
+- **Ship 30 for 30** essays that open in the artifact viewer (~1,250 words, hook, headings, takeaway)
+- **Artifact viewer** with Preview / Source, copy, download, and pop-out; HTML is Bleach-sanitized and iframed with `sandbox=""`
+- **Visible LLM checklist** in the sidebar showing the selected Ollama, OpenAI, or Claude model and configuration state
+- **Idempotent ingestion** of the ChatPRD transcript archive
 
-## 🛠 Prerequisites
-- Docker & Docker Compose
-- (Optional) Local Ollama instance running `llama3` if not using Anthropic.
+## Prerequisites
+- Docker and Docker Compose
+- Ollama on the host for the local demo, with a chat model and `all-minilm` if you use semantic retrieval
 
-## 🚀 Getting Started
+## Getting Started
 
-1. **Clone & Configure**
+1. **Clone and configure**
    ```bash
    copy .env.example .env
-   # On macOS/Linux: cp .env.example .env
-   # Use Ollama locally, or set LLM_PROVIDER=anthropic and add ANTHROPIC_API_KEY.
+   # macOS/Linux: cp .env.example .env
+   # Demo default: LLM_PROVIDER=ollama. For cloud, set LLM_PROVIDER=openai or anthropic and the matching API key.
    ```
 
-2. **Run via Docker Compose**
+2. **Run**
    ```bash
    docker compose up --build
    ```
 
-3. **Access the App**
-   Open `http://localhost`. Confirm the API is ready at
-   `http://localhost:8000/api/v1/health`.
+3. **Open**
+   - App: `http://localhost`
+   - Health: `http://localhost:8000/api/v1/health`
+   - Runtime (provider/model): `http://localhost:8000/api/v1/runtime`
 
-4. **Run automated checks**
+4. **Tests**
    ```bash
    docker compose exec -e PYTHONPATH=/app backend pytest -q
    cd frontend && npm run build && npm run lint
    ```
 
-The backend runs Alembic migrations at startup. The local demo account is
-created automatically; it is not an authentication feature.
+Alembic runs at API startup. The local demo user is created automatically; it is not authentication.
 
 ### Load transcript evidence
 
-The repository intentionally does not include Lenny's transcript corpus. Place
-authoritative `.md` transcript files in `data/transcripts/`, start Ollama, and
-pull both configured models before ingesting:
-
 ```bash
-ollama pull llama3
+git clone https://github.com/ChatPRD/lennys-podcast-transcripts data/lennys-podcast-transcripts
+ollama pull qwen3.5:2b
 ollama pull all-minilm
-# The embedding endpoint must be enabled by the local Ollama server. If the
-# server reports that embeddings are unsupported, restart it with --embeddings.
 docker compose exec backend python -m backend.scripts.ingest --dir /app/data/transcripts
 docker compose exec backend python -m backend.scripts.diagnostics --query "product discovery versus execution"
 ```
 
-Ingestion and querying use the same configured embedding model and dimension.
-Changing either requires re-ingesting the corpus.
+Match `.env` `OLLAMA_MODEL` to a model you actually pulled. Changing embedding model or dimension requires re-ingest.
 
-## 📚 Documentation
+### LLM provider configuration
+
+Use the sidebar’s **Local / Cloud** toggle to change the running demo without editing code or restarting. The selection and cloud key are held only in backend memory until the backend restarts. `.env` remains the default configuration used at startup.
+
+| Provider | Required configuration | Suggested use |
+| --- | --- | --- |
+| Ollama (local) | `LLM_PROVIDER=ollama`, `OLLAMA_MODEL=qwen3.5:2b` | Required demo path; run `ollama pull qwen3.5:2b` first. |
+| OpenAI (cloud) | `LLM_PROVIDER=openai`, `OPENAI_API_KEY`, `OPENAI_MODEL` | Cloud Responses API. |
+| Claude (cloud) | `LLM_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | Anthropic Messages API. |
+| OpenRouter (cloud) | Select OpenRouter in the sidebar and provide an API key | Loads the live OpenRouter model catalog. |
+
+The local toggle lists models installed in the running Ollama server. Cloud mode has provider and API-key inputs; OpenAI and OpenRouter can load their model catalogs. Failures never silently change providers: missing keys, unreachable Ollama, and cloud API failures return a clear error.
+
+If Ollama reports embeddings unsupported, restart it with embeddings enabled before switching `RETRIEVAL_MODE=semantic`.
+
+## Documentation
+- [PRD](docs/PRD.md)
 - [Architecture](docs/architecture.md)
-- [Design decisions](docs/design.md)
+- [Design](docs/design.md)
 - [Manual test plan](docs/manual-test-plan.md)
+- [Agent transcripts](agent-transcripts/README.md)
 
-## 🔧 Troubleshooting
-- **Database Connection Fails**: Run `docker compose ps`; the `db` service must be healthy. Ensure port 5433 isn't blocked.
-- **Ollama Timeout**: If using a local model, ensure `host.docker.internal` is accessible from the container.
-- **No answer available**: Ingest transcript files before asking questions; the assistant deliberately declines unsupported questions when retrieval is empty.
+## Troubleshooting
+- **Database**: `docker compose ps`; Postgres must be healthy. Host port is `5433`.
+- **Ollama**: the API container uses `host.docker.internal:11434`. Timeouts return a 503 instead of crashing.
+- **No answer**: ingest transcripts first; empty retrieval declines instead of guessing.
+- **HTML looks empty**: the viewer only allows a static tag/CSS allowlist. Scripts are stripped on purpose.
 
----
-*Built with FastAPI, React, TailwindCSS, and PostgreSQL/pgvector.*
+Built with FastAPI, React, Tailwind CSS, and PostgreSQL/pgvector.

@@ -1,184 +1,88 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+:root {
+  --paper: #f1eee7;
+  --paper-deep: #e7e1d7;
+  --ink: #252522;
+  --muted: #777268;
+  --line: #b9b1a4;
+  --line-dark: #71695e;
+  --accent: #bd5d3e;
+  --accent-soft: #ead1c4;
+  --night: #20211f;
+  --night-soft: #2c2d29;
 }
 
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+.workspace-shell {
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+  font-family: "Trebuchet MS", Verdana, sans-serif;
 }
+.workspace-shell * { border-radius: 2px !important; }
+.workspace-shell button, .workspace-shell input, .workspace-shell select { font-family: inherit; }
+.workspace-shell .bg-slate-950, .workspace-shell .bg-slate-950\/80 { background: var(--paper) !important; }
+.workspace-shell .bg-slate-900, .workspace-shell .bg-slate-900\/80, .workspace-shell .bg-slate-900\/90 { background: var(--paper-deep) !important; }
+.workspace-shell .bg-slate-800, .workspace-shell .bg-slate-800\/70 { background: #dcd5ca !important; }
+.workspace-shell .bg-slate-950\/60 { background: rgba(255,255,255,.32) !important; }
+.workspace-shell .bg-cyan-500\/10, .workspace-shell .bg-cyan-400\/10 { background: var(--accent-soft) !important; }
+.workspace-shell .bg-gradient-to-r, .workspace-shell .bg-gradient-to-br, .workspace-shell .bg-gradient-to-tr { background: var(--accent) !important; }
+.workspace-shell .text-white, .workspace-shell .text-slate-100, .workspace-shell .text-slate-200, .workspace-shell .text-slate-300 { color: var(--ink) !important; }
+.workspace-shell .text-slate-400, .workspace-shell .text-slate-500, .workspace-shell .text-slate-600 { color: var(--muted) !important; }
+.workspace-shell .text-cyan-100, .workspace-shell .text-cyan-200, .workspace-shell .text-cyan-300, .workspace-shell .text-cyan-400 { color: var(--accent) !important; }
+.workspace-shell .text-indigo-400, .workspace-shell .text-indigo-300 { color: var(--accent) !important; }
+.workspace-shell .border-slate-800, .workspace-shell .border-slate-700, .workspace-shell .border-slate-700\/70, .workspace-shell .border-slate-700\/80 { border-color: var(--line) !important; }
+.workspace-shell .border-cyan-500\/30, .workspace-shell .border-cyan-400\/70 { border-color: var(--accent) !important; }
+.workspace-shell .shadow-xl, .workspace-shell .shadow-2xl, .workspace-shell .shadow-lg, .workspace-shell .shadow-md { box-shadow: none !important; }
 
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+.workspace-shell > aside {
+  width: 286px !important;
+  background: var(--paper-deep) !important;
+  border-color: var(--line-dark) !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
 }
+.workspace-shell > aside > div:first-child { padding: 26px 22px 18px !important; border-bottom: 1px solid var(--line); }
+.workspace-shell > aside h1 { font-family: Georgia, serif; font-size: 23px !important; letter-spacing: -.03em; }
+.workspace-shell > aside section { background: transparent !important; border: 1px solid var(--line-dark) !important; box-shadow: none !important; padding: 14px !important; }
+.workspace-shell > aside section h2 { font-family: Georgia, serif; font-size: 17px !important; }
+.workspace-shell > aside section input, .workspace-shell > aside section select { background: var(--paper) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+.workspace-shell > aside section button, .workspace-shell > aside section .grid button { border-color: var(--line) !important; background: transparent !important; color: var(--muted) !important; }
+.workspace-shell > aside section button[aria-pressed="true"] { background: var(--ink) !important; color: var(--paper) !important; border-color: var(--ink) !important; }
+.workspace-shell > aside > div:first-child > button { background: var(--ink) !important; color: var(--paper) !important; box-shadow: none !important; text-transform: uppercase; letter-spacing: .08em; font-size: 10px !important; }
+.workspace-shell > aside > div:nth-child(2) { padding: 18px 16px !important; }
+.workspace-shell > aside > div:nth-child(2) > div:first-child { color: var(--muted) !important; letter-spacing: .16em; }
+.workspace-shell > aside > div:nth-child(2) button { border-color: transparent !important; background: transparent !important; color: var(--muted) !important; }
+.workspace-shell > aside > div:nth-child(2) button:hover { color: var(--ink) !important; background: #d7cfc3 !important; }
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
+.workspace-shell > div:nth-child(2) { background: var(--paper) !important; background-image: linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(113,105,94,.12) calc(100% - 1px)) !important; }
+.workspace-shell > div:nth-child(2) > div:first-child { background: transparent !important; }
+.workspace-shell > div:nth-child(2) h2 { font-family: Georgia, serif; color: var(--ink) !important; font-size: 28px !important; }
+.workspace-shell > div:nth-child(2) .prose { color: var(--ink) !important; font-size: 14px; line-height: 1.7; }
+.workspace-shell > div:nth-child(2) .prose strong { color: var(--ink) !important; font-family: Georgia, serif; }
+.workspace-shell > div:nth-child(2) > div:last-child { background: var(--paper) !important; border-top: 1px solid var(--line); padding: 18px 28px 24px !important; }
+.workspace-shell > div:nth-child(2) form input { background: #faf8f3 !important; border: 1px solid var(--line-dark) !important; color: var(--ink) !important; box-shadow: none !important; }
+.workspace-shell > div:nth-child(2) form button { background: var(--accent) !important; color: white !important; box-shadow: none !important; }
+.workspace-shell > div:nth-child(2) form input::placeholder { color: var(--muted) !important; }
+.workspace-shell > div:nth-child(2) .source-index { border-top: 1px solid var(--line); padding-top: 14px; }
+.workspace-shell .source-card { background: rgba(255,255,255,.24) !important; border-color: var(--line) !important; }
+.workspace-shell .source-card:hover, .workspace-shell .source-card.border-cyan-500\/70 { background: var(--accent-soft) !important; border-color: var(--accent) !important; }
+.workspace-shell .source-card button { color: var(--ink) !important; font-family: Georgia, serif; }
 
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
+.workspace-shell > div:nth-child(3) { background: #ddd6ca !important; border-color: var(--line-dark) !important; box-shadow: none !important; }
+.workspace-shell > div:nth-child(3) > div:first-child { background: var(--night) !important; color: var(--paper) !important; border-color: var(--line-dark) !important; }
+.workspace-shell > div:nth-child(3) > div:first-child h2, .workspace-shell > div:nth-child(3) > div:first-child p { color: var(--paper) !important; }
+.workspace-shell > div:nth-child(3) > div:nth-child(2) { background: var(--night-soft) !important; border-color: var(--line-dark) !important; }
+.workspace-shell > div:nth-child(3) > div:nth-child(2) button { color: #d9d0c2 !important; background: transparent !important; }
+.workspace-shell > div:nth-child(3) > div:nth-child(2) button.bg-slate-800 { background: var(--accent) !important; color: white !important; }
+.workspace-shell > div:nth-child(3) > div:last-child { background: #cfc7ba !important; }
+.workspace-shell > div:nth-child(3) > div:last-child pre { color: var(--ink) !important; }
 
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
+@media (max-width: 900px) {
+  .workspace-shell > aside { width: 238px !important; }
+  .workspace-shell > div:nth-child(3) { width: 42% !important; min-width: 320px !important; }
 }
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
-  width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+@media (max-width: 680px) {
+  .workspace-shell { overflow: auto !important; }
+  .workspace-shell > aside { width: 100% !important; height: auto !important; max-height: 42vh; border-right: 0; border-bottom: 1px solid var(--line-dark); }
+  .workspace-shell > aside > div:nth-child(2) { max-height: 120px; }
+  .workspace-shell > div:nth-child(2) { min-height: 58vh; }
+  .workspace-shell > div:nth-child(3) { position: fixed; inset: 0; width: 100% !important; min-width: 0 !important; }
 }

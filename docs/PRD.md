@@ -54,9 +54,8 @@ The product should be measured using the following outcomes:
 
 ### Success thresholds
 - The assistant should answer questions using retrieved transcript evidence rather than generic model knowledge.
-- Retrieval should surface the most relevant transcript chunks for the given question.
-- High-value answers should be returned within a practical response time for a local MVP.
-- Generated artifacts should be usable and reviewable without exposing unsafe HTML content.
+- At least 80% of demo product/growth questions should return at least one clickable transcript citation with an excerpt.
+- Generated artifacts should open in the in-app viewer (Preview + Source) without executing unsandboxed HTML.
 
 ---
 
@@ -136,29 +135,26 @@ Given a clean environment, when the README instructions are followed, then the a
 
 ---
 
-## 1.9 Initial API contract
+## 1.9 API contract
 
-The backend should expose the following routes as part of the early MVP contract:
+The backend exposes:
 
-- GET /health
-- POST /sessions
-- GET /sessions
-- GET /sessions/{session_id}
-- POST /chat
-- POST /artifacts
+- `GET /api/v1/health` — process liveness
+- `GET /api/v1/ready` — database + provider metadata
+- `GET /api/v1/runtime` — evaluator-visible model selection
+- `POST /api/v1/sessions/` — create a chat
+- `GET /api/v1/sessions/` — list chats
+- `GET /api/v1/sessions/{id}/messages` — history including `sources` and `artifact`
+- `POST /api/v1/sessions/{id}/chat` — grounded answer, citations, optional artifact
 
-### Endpoint intent
-- /health: confirm the service is running and responsive
-- /sessions: create and list conversation sessions
-- /sessions/{session_id}: retrieve conversation history and state
-- /chat: send a question and receive a grounded answer with sources
-- /artifacts: create an essay or document artifact from transcript-grounded content
+Artifacts are not a separate POST. Essay and HTML skills return a human `message.content` plus a structured `artifact` object persisted on the assistant message.
 
 ### Response expectations
-- Structured JSON responses with clear success and error payloads
-- Source metadata attached to answers where transcript evidence is used
-- Session-scoped conversation state to preserve independent chat history
-- Standardized error handling for missing configuration, DB issues, and model outages
+- Structured JSON with validated Pydantic models
+- Source metadata attached to answers; unused `[n]` dropped from the UI payload
+- Session-scoped history with no cross-session leakage
+- Structured errors for missing keys, Ollama downtime, and database failure
+
 
 ---
 

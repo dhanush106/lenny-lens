@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import uuid
 
 import pytest
@@ -45,7 +46,7 @@ async def test_retrieval_returns_relevant_chunks_for_product_question():
 
 
 class FakeLLM:
-    async def generate_response(self, prompt: str, system_prompt: str | None = None) -> str:
+    async def generate_response(self, prompt: str, system_prompt: str | None = None, max_tokens: int = 800) -> str:
         assert "Product discovery evidence" in prompt
         return "Teams validate problems before execution. [1]"
 
@@ -53,9 +54,17 @@ class FakeLLM:
 class FakeRetrieval:
     async def search(self, db, query: str, top_k: int):
         transcript = Transcript(id=99, video_id="source-99", title="Product discovery evidence")
-        chunk = Chunk(id=123, transcript_id=99, text="Validate the problem before building.")
+        chunk = Chunk(id=123, transcript_id=99, start_time=0, end_time=0, text="Validate the problem before building.")
         chunk.transcript = transcript
         return [RetrievedChunk(chunk=chunk, score=0.82)]
+
+
+class _FakeSession:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
 
 
 @pytest.mark.asyncio
@@ -64,16 +73,15 @@ async def test_qna_pipeline_returns_grounded_answer_and_sources():
     service.retrieval_service = FakeRetrieval()
     service.llm_provider = FakeLLM()
 
-    response = await service.answer_question("How should teams approach discovery?")
+    with patch("backend.services.rag.AsyncSessionLocal", return_value=_FakeSession()):
+        response = await service.answer_question("How should teams approach discovery?")
 
     assert response["answer"] == "Teams validate problems before execution. [1]"
-    assert response["sources"] == [
-        {
-            "id": 123,
-            "transcript_id": 99,
-            "title": "Product discovery evidence",
-            "video_id": "source-99",
-            "score": 0.82,
-            "text_preview": "Validate the problem before building....",
-        }
-    ]
+    assert len(response["sources"]) == 1
+    source = response["sources"][0]
+    assert source["n"] == 1
+    assert source["title"] == "Product discovery evidence"
+    assert source["video_id"] == "source-99"
+    assert source["chunk_id"] == 123
+    assert source["excerpt"].startswith("Validate the problem")
+    assert source["start_seconds"] is None
