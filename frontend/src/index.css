@@ -1,3 +1,103 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #E5E3D0;
+    color: #493606;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  /* Minimal scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(100, 101, 87, 0.25);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 101, 87, 0.45);
+  }
+}
+
+/* Custom markdown rendering for editorial feel */
+.prose-minimal {
+  color: #493606;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.prose-minimal p {
+  margin-bottom: 1.125rem;
+}
+
+.prose-minimal h1, 
+.prose-minimal h2, 
+.prose-minimal h3, 
+.prose-minimal h4 {
+  color: #493606;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-minimal h1 { font-size: 1.35rem; }
+.prose-minimal h2 { font-size: 1.15rem; }
+.prose-minimal h3 { font-size: 1.05rem; }
+
+.prose-minimal ul, .prose-minimal ol {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+}
+
+.prose-minimal li {
+  margin-bottom: 0.375rem;
+}
+
+.prose-minimal ul { list-style-type: disc; }
+.prose-minimal ol { list-style-type: decimal; }
+
+.prose-minimal code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background-color: rgba(201, 196, 159, 0.4);
+  padding: 0.15em 0.35em;
+  border-radius: 0.25rem;
+  color: #493606;
+}
+
+.prose-minimal pre {
+  background-color: rgba(100, 101, 87, 0.08);
+  border: 1px solid rgba(100, 101, 87, 0.18);
+  border-radius: 0.375rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.825rem;
+  color: #493606;
+}
+
+.prose-minimal blockquote {
+  border-left: 2px solid #646557;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #646557;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prose-minimal strong {
+  font-weight: 600;
+  color: #493606;
+}
+

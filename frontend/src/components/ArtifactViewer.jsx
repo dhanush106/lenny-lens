@@ -65,61 +65,69 @@ export default function ArtifactViewer({ artifact, onClose }) {
       );
     }
     return (
-      <div className="prose prose-slate prose-invert max-w-none prose-sm p-6 overflow-y-auto h-full">
+      <div className="prose-minimal p-6 overflow-y-auto h-full bg-chalk">
         <ReactMarkdown>{content}</ReactMarkdown>
       </div>
     );
   };
 
   return (
-    <div className="fixed inset-0 z-30 bg-slate-950/80 md:static md:bg-transparent md:w-1/2 md:min-w-[400px] md:max-w-[640px] border-l border-slate-800 bg-slate-950 flex flex-col shadow-2xl">
-      <div className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between px-4 shrink-0 gap-2">
-        <div className="flex items-center gap-3 overflow-hidden min-w-0">
+    <div className="fixed inset-0 z-30 bg-chalk/90 md:static md:bg-transparent md:w-1/2 md:min-w-[400px] md:max-w-[640px] border-l border-stoneLaurel/20 bg-chalk flex flex-col shadow-xl">
+      <div className="h-14 border-b border-stoneLaurel/20 bg-chalk-subtle/50 flex items-center justify-between px-4 shrink-0 gap-2">
+        <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
           {isHtml ? (
-            <Code className="text-cyan-400 shrink-0" size={18} />
+            <Code className="text-forestUmber shrink-0" size={16} />
           ) : (
-            <FileText className="text-indigo-400 shrink-0" size={18} />
+            <FileText className="text-forestUmber shrink-0" size={16} />
           )}
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-slate-200 truncate">{title || 'Generated Artifact'}</h2>
-            <p className="text-[11px] text-slate-500 truncate">{isHtml ? 'Sandboxed HTML' : 'Markdown document'}</p>
+            <h2 className="text-xs font-serif font-bold text-forestUmber truncate">{title || 'Generated Artifact'}</h2>
+            <p className="text-[10px] font-mono text-stoneLaurel truncate uppercase tracking-wide">
+              {isHtml ? 'Sandboxed HTML Canvas' : 'Markdown Document'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={copyContent} className="p-2 text-slate-400 hover:text-cyan-400 rounded-lg hover:bg-slate-800" aria-label="Copy artifact">
-            <Copy size={16} />
+          <button type="button" onClick={copyContent} className="p-1.5 text-stoneLaurel hover:text-forestUmber rounded hover:bg-fennel/40 transition-all" aria-label="Copy artifact">
+            <Copy size={15} />
           </button>
-          <button type="button" onClick={downloadContent} className="p-2 text-slate-400 hover:text-cyan-400 rounded-lg hover:bg-slate-800" aria-label="Download artifact">
-            <Download size={16} />
+          <button type="button" onClick={downloadContent} className="p-1.5 text-stoneLaurel hover:text-forestUmber rounded hover:bg-fennel/40 transition-all" aria-label="Download artifact">
+            <Download size={15} />
           </button>
-          <button type="button" onClick={popOut} className="p-2 text-slate-400 hover:text-cyan-400 rounded-lg hover:bg-slate-800" aria-label="Open artifact in new tab">
-            <ExternalLink size={16} />
+          <button type="button" onClick={popOut} className="p-1.5 text-stoneLaurel hover:text-forestUmber rounded hover:bg-fennel/40 transition-all" aria-label="Open artifact in new tab">
+            <ExternalLink size={15} />
           </button>
-          <button type="button" onClick={onClose} className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800" aria-label="Close artifact">
-            <X size={18} />
+          <button type="button" onClick={onClose} className="p-1.5 text-stoneLaurel hover:text-forestUmber rounded hover:bg-fennel/40 transition-all" aria-label="Close artifact">
+            <X size={16} />
           </button>
         </div>
       </div>
-      <div className="px-4 py-2 border-b border-slate-800 flex items-center gap-2 text-xs">
+
+      <div className="px-4 py-1.5 border-b border-stoneLaurel/15 flex items-center gap-2 text-xs bg-chalk">
         <button
           type="button"
           onClick={() => setTab('preview')}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1 ${tab === 'preview' ? 'bg-slate-800 text-cyan-300' : 'text-slate-400'}`}
+          className={`px-2.5 py-1 rounded font-mono text-[11px] flex items-center gap-1 transition-all ${
+            tab === 'preview' ? 'bg-fennel/60 font-semibold text-forestUmber border border-stoneLaurel/20' : 'text-stoneLaurel hover:text-forestUmber'
+          }`}
         >
-          <Eye size={14} /> Preview
+          <Eye size={13} /> Preview
         </button>
         <button
           type="button"
           onClick={() => setTab('source')}
-          className={`px-3 py-1.5 rounded-lg flex items-center gap-1 ${tab === 'source' ? 'bg-slate-800 text-cyan-300' : 'text-slate-400'}`}
+          className={`px-2.5 py-1 rounded font-mono text-[11px] flex items-center gap-1 transition-all ${
+            tab === 'source' ? 'bg-fennel/60 font-semibold text-forestUmber border border-stoneLaurel/20' : 'text-stoneLaurel hover:text-forestUmber'
+          }`}
         >
-          <Code size={14} /> Source
+          <Code size={13} /> Source
         </button>
-        {copied && <span className="ml-auto text-cyan-400">Copied</span>}
+        {copied && <span className="ml-auto font-mono text-[10px] text-forestUmber">Copied</span>}
       </div>
-      <div className="flex-1 overflow-hidden relative bg-slate-950">
+
+      <div className="flex-1 overflow-hidden relative bg-chalk">
         {tab === 'preview' ? renderPreview() : (
-          <pre className="h-full overflow-auto p-4 text-xs text-slate-300 whitespace-pre-wrap">{content}</pre>
+          <pre className="h-full overflow-auto p-5 text-xs text-forestUmber font-mono bg-chalk-subtle/30 whitespace-pre-wrap">{content}</pre>
         )}
       </div>
     </div>

@@ -131,7 +131,7 @@ function App() {
   };
 
   return (
-    <div className="workspace-shell flex h-screen w-full bg-slate-950 font-sans antialiased text-slate-200 overflow-hidden">
+    <div className="workspace-shell flex h-screen w-full bg-chalk font-sans antialiased text-forestUmber overflow-hidden selection:bg-fennel selection:text-forestUmber">
       <Sidebar
         sessions={sessions}
         activeSessionId={activeSessionId}
